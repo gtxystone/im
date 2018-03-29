@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+	http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd"
+	default-lazy-init="false">
+
+	<context:component-scan base-package="com.yx.base.controller" />
+
+	<mvc:annotation-driven>
+		<mvc:message-converters>
+			<bean id="mappingJacksonHttpMessageConverter"
+				class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+				<property name="objectMapper">
+                    <bean class="com.framework.dao.HibernateAwareObjectMapper" />
+                </property>
+				
+			</bean>
+			
+            
+			<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+				<property name="supportedMediaTypes">
+					<list>
+						<value>application/json;charset=UTF-8</value>
+						<value>text/plain;charset=UTF-8</value>
+						<value>text/html;charset=UTF-8</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+
+	<mvc:default-servlet-handler />
+
+	<bean class="com.yx.base.exception.ExceptionResolver" />
+	
+	<bean
+		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<props>
+				<prop key="java.lang.Exception">forward:/exception</prop>
+			</props>
+		</property>
+	</bean>
+
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<mvc:exclude-mapping path="/images/**" />
+			<mvc:exclude-mapping path="/css/**" />
+			<mvc:exclude-mapping path="/js/**" />
+			<mvc:exclude-mapping path="/upload/**" />
+			<bean class="com.yx.base.intercepter.AllIntercepter"></bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+
+
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="maxUploadSize" value="107374182400" /><!-- 100G -->
+		<property name="maxInMemorySize" value="31457280"></property><!-- 30M -->
+		<property name="defaultEncoding" value="UTF-8"></property><!-- 默认UTF-8 -->
+		<property name="resolveLazily" value="true" />
+	</bean>
+
+	<!-- FreeMarker环境配置 -->
+	<bean id="freemarkerConfig"
+		class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+		<!-- freemarker模板位置 -->
+		<property name="templateLoaderPath" value="/templates/"></property>
+		<property name="defaultEncoding" value="utf-8"></property>
+		<property name="freemarkerSettings">
+			<value>
+				defaultEncoding=utf-8
+				url_escaping_charset=utf-8
+				locale=zh_CN
+				boolean_format=true,false
+				datetime_format=yyyy-MM-dd HH:mm:ss
+				date_format=yyyy-MM-dd
+				time_format=HH:mm:ss
+				number_format=0.######
+				whitespace_stripping=true
+			</value>
+		</property>
+
+	</bean>
+
+	<!-- FreeMarker视图解析 -->
+	<bean id="freeMarkerViewResolver"
+		class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+		<property name="cache" value="false" />
+		<property name="viewClass"
+			value="org.springframework.web.servlet.view.freemarker.FreeMarkerView"></property>
+		<property name="contentType" value="text/html;charset=utf-8"></property>
+		<property name="order" value="0" />
+		<property name="suffix" value=".html" />
+		<property name="requestContextAttribute" value="request" />
+	</bean>
+
+</beans>

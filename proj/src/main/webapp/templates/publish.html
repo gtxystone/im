@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+
+<meta charset="utf-8">
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>上传版本</title>
+<link rel="stylesheet"
+	href="${contextPath}/component-js/layui/css/layui.css">
+<script src="${contextPath}/component-js/jquery/jquery-3.1.0.min.js"></script>
+<script
+	src="${contextPath}/component-js/jquery/vendor/jquery.ui.widget.js"></script>
+<script
+	src="${contextPath}/component-js/jquery/jquery.iframe-transport.js"></script>
+<script src="${contextPath}/component-js/jquery/jquery.fileupload.js"></script>
+
+<script src="${contextPath}/component-js/layui/layui.js"></script>
+<script>
+	var httpHead = "http://login.hui2013.cn/${contextPath}";
+	httpHead = "http://localhost/wms";
+	layui.use([ 'layer', 'upload' ], function() {
+		var laypage = layui.laypage, layer = layui.layer;
+		var uploadIndex;
+		layui.upload({
+			url : 'uploadPublish',
+			type : 'file',
+			//ext : 'exe|docx|xlsx|jpg|png|xls',
+			before:function(){
+				uploadIndex=layer.load(0, {shade: false});
+			},
+			success : function(res) {
+				layer.close(uploadIndex);
+				var url = (res.data);
+				console.log(url);
+				$("#url").val(url);				
+				$("#disUrl").html(url);
+			}
+		});
+
+	});
+	function getVersion() {
+		var device = $("#device").val();
+		var index = layer.load(0, {shade: false});
+		$.post("getVersion?device=" + device, function(data) {
+			if(data.data.versions!=null){
+				$("#versions").html(data.data.versions);
+			}else{
+				$("#versions").html("未获取到版本，可能还未发布过");
+			}
+			layer.close(index);
+		});
+	}
+
+function check(){
+	var version=$("#version").val();
+	var url=$("#url").val();
+	if(version==""||url==""){
+		layer.msg('版本号和更新文件不能为空呢'); 
+		return false;
+	}
+	$("#publishForm").submit();
+}
+</script>
+</head>
+<body>
+
+	<form action="doPublish" method="post"
+		enctype=”multipart/form-data” id="publishForm">
+
+		<table align="center" border="1"
+			style="height: 210px; margin-top: 40px; width: 800px;">
+			<tr>
+				<td colspan="2" align="center" style="height: 40px;">发布版本</td>
+			</tr>
+			<tr>
+				<td height="30" width="200">平台</td>
+				<td width="120"><select style="width: 200px;" id="device" name="device" onchange="getVersion()"><option
+							value="1" selected="selected">Android</option>
+						<option value="2">IOS</option></select></td>
+			</tr>
+			<tr>
+				<td height="30" width="200">上一版本号</td>
+				<td width="120"><span id="versions">${versions!}</span></td>
+			</tr>
+			<tr>
+				<td height="30" width="200">发布版本号</td>
+				<td width="120"><input type="text" name="versions"
+					class="layui-input"></td>
+			</tr>
+			<tr>
+				<td height="100" width="200">更新内容</td>
+				<td width="120"><textarea rows="6" cols="88" name="content"></textarea></td>
+			</tr>
+			<tr>
+				<td height="30" width="200">更新文件</td>
+				<td width="120"><input type="file" name="myfile"
+					class="layui-upload-file">
+					<span id="disUrl"></span>
+					<input type="hidden" name="url"
+					id="url"></td>
+			</tr>
+			<tr>
+				<td colspan="2" id="demo1" align="center" height="50"><input
+					class="layui-btn" onclick="check()" type="button" style="width:200px;" value="发布"></td>
+			</tr>
+		</table>
+	</form>
+</body>
+</html>

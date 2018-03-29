@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:task="http://www.springframework.org/schema/task" xmlns:cache="http://www.springframework.org/schema/cache"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+	http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.3.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+	http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.3.xsd 
+	http://www.springframework.org/schema/data/mongo http://www.springframework.org/schema/data/mongo/spring-mongo.xsd
+	http://www.springframework.org/schema/cache  http://www.springframework.org/schema/cache/spring-cache-4.3.xsd"
+	default-lazy-init="true">
+
+	<context:component-scan base-package="com.framework.dao" />
+	<context:component-scan base-package="com.framework.service" />
+
+	<context:component-scan base-package="com.yx.base.service" />
+
+	<aop:aspectj-autoproxy proxy-target-class="true" />
+
+	<context:annotation-config />
+
+	<task:annotation-driven />
+		 	
+	<bean id="threadPool"
+        class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <!-- 核心线程数 -->
+        <property name="corePoolSize" value="300" />
+        <!-- 最大线程数 -->
+        <property name="maxPoolSize" value="1000" />
+        <!-- 队列最大长度 >=mainExecutor.maxSize -->
+        <property name="queueCapacity" value="2500" />
+        <!-- 线程池维护线程所允许的空闲时间 -->
+        <property name="keepAliveSeconds" value="300" />
+        <!-- 线程池对拒绝任务(无线程可用)的处理策略 ThreadPoolExecutor.CallerRunsPolicy策略 ,调用者的线程会执行该任务,如果执行器已关闭,则丢弃.  -->
+        <property name="rejectedExecutionHandler">
+            <bean class="java.util.concurrent.ThreadPoolExecutor$CallerRunsPolicy" />
+        </property>
+    </bean>
+    
+    <bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+        <property name="locations">
+          <list>
+            <value>classpath*:/config/imServer.properties</value>
+          </list>
+        </property>
+      </bean>
+    
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
+		init-method="init" destroy-method="close">
+		<!-- 基本属性 url、user、password -->
+		<property name="url"
+			value="jdbc:mysql://192.168.1.116:3306/community?useUnicode=true&amp;characterEncoding=UTF-8&amp;autoReconnect=true" />
+		<property name="username" value="root" />
+		<property name="password" value="root" />
+
+		<!-- 配置初始化大小、最小、最大 -->
+		<property name="initialSize" value="1" />
+		<property name="minIdle" value="1" />
+		<property name="maxActive" value="2000" />
+
+		<!-- 配置获取连接等待超时的时间 -->
+		<property name="maxWait" value="60000" />
+		
+		<!--<property name="removeAbandoned" value="true" />  打开removeAbandoned功能 -->
+    	<!--<property name="removeAbandonedTimeout" value="300" />  300秒，也就是5分钟 -->
+    	<!--<property name="logAbandoned" value="true" />  关闭abanded连接时输出错误日志 -->
+
+		<!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+		<property name="timeBetweenEvictionRunsMillis" value="12000" />
+
+		<!-- 配置一个连接在池中不被清除的时间，单位是毫秒 -->
+		<property name="minEvictableIdleTimeMillis" value="120000" />
+
+		<property name="validationQuery" value="SELECT 'x'" />
+		<property name="testWhileIdle" value="true" />
+		<property name="testOnBorrow" value="false" />
+		<property name="testOnReturn" value="false" />
+
+		<!-- 打开PSCache，并且指定每个连接上PSCache的大小 -->
+		<property name="poolPreparedStatements" value="true" />
+		<property name="maxPoolPreparedStatementPerConnectionSize"
+			value="20" />
+
+		<!-- 配置监控统计拦截的filters，去掉后监控界面sql无法统计 -->
+		<property name="filters" value="stat" />
+		<property name="connectionInitSqls">
+			<list>
+				<value>set names 'utf8mb4'</value>
+			</list>
+		</property>
+	</bean>
+
+	
+	<bean id="redission-config" class="org.redisson.config.Config"></bean>
+	
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="packagesToScan">
+			<list>
+				<value>com.yx.base.model</value>
+				<value>com.yx.base.extendmodel</value>
+			</list>
+		</property>
+
+		<property name="hibernateProperties">
+			<value>
+				<!-- 设置数据库方言 -->
+				hibernate.dialect=org.hibernate.dialect.MySQL5Dialect
+				<!-- 设置自动创建|更新|验证数据库表结构 -->
+				hibernate.hbm2ddl.auto=none
+				<!-- 是否在控制台显示sql -->
+				hibernate.show_sql=true
+				<!-- 是否格式化sql，优化显示 -->
+				hibernate.format_sql=false
+				hibernate.enable_lazy_load_no_trans=true
+				<!-- 是否开启二级缓存 -->
+				hibernate.cache.use_second_level_cache=false
+				hibernate.cache.region_prefix=hibernate
+				hibernate.cache.use_structured_entries=true
+				hibernate.generate_statistics=false
+				hibernate.cache.provider_configuration_file_resource_path=config/hibernate-redis.properties
+				hibernate.transaction.factory_class=org.hibernate.engine.transaction.internal.jdbc.JdbcTransactionFactory
+				
+				<!-- 是否开启查询缓存 -->
+				hibernate.cache.use_query_cache=false
+				<!-- 缓存region -->
+				hibernate.cache.region.factory_class=org.hibernate.cache.redis.hibernate4.SingletonRedisRegionFactory
+
+				<!-- 数据库批量查询最大数 -->
+				hibernate.jdbc.fetch_size=50
+				<!-- 数据库批量更新、添加、删除操作最大数 -->
+				hibernate.jdbc.batch_size=50
+				<!-- 是否自动提交事务 -->
+				hibernate.connection.autocommit=true
+				<!-- 指定hibernate在何时释放JDBC连接 -->
+				hibernate.connection.release_mode=auto
+				<!-- 创建session方式 hibernate4.x 的方式 -->
+				hibernate.current_session_context_class=org.springframework.orm.hibernate4.SpringSessionContext
+				<!-- javax.persistence.validation.mode默认情况下是auto的，就是说如果不设置的话它是会自动去你的classpath下面找一个bean-validation**包 
+					所以把它设置为none即可 -->
+				javax.persistence.validation.mode=none
+			</value>
+		</property>
+
+		<property name="entityInterceptor">
+			<ref bean="entityInterceptor" />
+		</property>
+	</bean>
+
+
+	<bean id="eventListener" class="com.framework.dao.EventListener" />
+	<bean id="entityInterceptor" class="com.framework.dao.EntityInterceptor" />
+	<bean id="nativeJdbcExtractor"
+		class="org.springframework.jdbc.support.nativejdbc.SimpleNativeJdbcExtractor" />
+
+	<bean id="oracleLobHandler" class="org.springframework.jdbc.support.lob.OracleLobHandler">
+		<property name="nativeJdbcExtractor">
+			<ref bean="nativeJdbcExtractor" />
+		</property>
+	</bean>
+	
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory">
+			<ref bean="sessionFactory" />
+		</property>
+	</bean>
+
+	<tx:annotation-driven transaction-manager="transactionManager"
+		proxy-target-class="true" />
+
+	<bean
+		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+		<tx:attributes>
+			<tx:method name="create*" propagation="REQUIRED" />
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="insert*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="remove*" propagation="REQUIRED" />
+			<tx:method name="del*" propagation="REQUIRED" />
+			<tx:method name="import*" propagation="REQUIRED" />
+			<tx:method name="edit*" propagation="REQUIRED" />
+			<tx:method name="*" propagation="SUPPORTS"/>
+		</tx:attributes>
+	</tx:advice>
+
+	<aop:config proxy-target-class="true">
+		<aop:advisor advice-ref="txAdvice"
+			pointcut="execution(* com.yx.base.service..*.*(..)) " />
+	</aop:config>
+
+	<mongo:mongo-client id="mongoClient" host="127.0.0.1" port="9091" credentials="admin2017:123654@admin"/>
+	
+	
+	
+	<mongo:db-factory id="mongoDbFactory"
+                      dbname="admin"
+                      mongo-ref="mongoClient"/>
+                      
+    <mongo:template id="mongoTemplate" db-factory-ref="mongoDbFactory" write-concern="NORMAL"/>
+    
+	
+</beans>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>chat1</title>
+    <script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="js/socket.io.js"></script>
+    <script type="text/javascript">
+    var socket = io('http://120.27.145.73:9092?token=1010e3d28a13881cb6ac8&device=3');
+    
+    socket.on('chat', function(data,fn) {
+    	if(data.messageType==2||data.messageType==34||data.messageType==3||data.messageType==4){
+    		$("#msgHis").append(data.content);
+    	}
+    	fn(data.msgId);
+    });
+    
+    function getMsg(){    	
+    	var json = {
+    			'content': $("#content").val() ,    	
+    			'destId':17068,
+    			'devType':3,
+    			'fromId':17150,
+    			'fromName':'姑姑家',
+    			'fromType':1,
+    			'imageIconUrl':'http://120.27.145.73/wmsMobile/upload/37901487490263526.png',
+    			'messageType':2,
+    			'msgId':'17150_' + Math.random()
+    			};
+    	return json;
+    }
+    
+    function sendMsg(){
+    	var jsonObj=getMsg();
+    	socket.emit('chat',jsonObj,function(d){
+    		console.log("服务器已经收到");
+    	});
+    }
+    </script>
+</head>
+<body>
+	<input type="text" id="content" name="content" value="test"/>
+	<input type="button" value="发送消息" onclick="sendMsg()"><br>
+	<div id="msgHis" style="width:500px;"></div>
+</body>
+</html>
